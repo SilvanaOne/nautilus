@@ -47,7 +47,11 @@ public struct IntentMessage<T: drop> has copy, drop {
     payload: T,
 }
 
-fun create_intent_message<P: drop>(intent: u8, timestamp_ms: u64, payload: P): IntentMessage<P> {
+fun create_intent_message<P: drop>(
+    intent: u8,
+    timestamp_ms: u64,
+    payload: P,
+): IntentMessage<P> {
     IntentMessage {
         intent,
         timestamp_ms,
@@ -94,7 +98,10 @@ public fun register_enclave<T>(
     transfer::share_object(enclave);
 }
 
-fun load_pk<T>(document: NitroAttestationDocument, enclave_config: &EnclaveConfig<T>): vector<u8> {
+fun load_pk<T>(
+    document: NitroAttestationDocument,
+    enclave_config: &EnclaveConfig<T>,
+): vector<u8> {
     let pcrs = document.pcrs();
     assert!(pcrs[0].index() == 0, EInvalidPCRs);
     assert!(pcrs[1].index() == 1, EInvalidPCRs);
@@ -113,14 +120,17 @@ public fun verify_signature<T, P: drop>(
     payload: P,
     signature: &vector<u8>,
 ): bool {
-    let intent_message = create_intent_message(intent_scope, timestamp_ms, payload);
+    let intent_message = create_intent_message(
+        intent_scope,
+        timestamp_ms,
+        payload,
+    );
     let payload = bcs::to_bytes(&intent_message);
     return ed25519::ed25519_verify(signature, &enclave.pk, &payload)
 }
 
 public fun update_pcrs<T: drop>(
     config: &mut EnclaveConfig<T>,
-    _cap: &Cap<T>,
     pcr0: vector<u8>,
     pcr1: vector<u8>,
     pcr2: vector<u8>,
@@ -131,7 +141,7 @@ public fun update_pcrs<T: drop>(
     config.version = config.version + 1;
 }
 
-public fun update_name<T: drop>(config: &mut EnclaveConfig<T>, _cap: &Cap<T>, name: String) {
+public fun update_name<T: drop>(config: &mut EnclaveConfig<T>, name: String) {
     config.name = name;
 }
 
@@ -191,5 +201,8 @@ fun test_serde() {
         },
     );
     let bytes = bcs::to_bytes(&signing_payload);
-    assert!(bytes == x"0020b1d110960100000d53616e204672616e636973636f0d00000000000000", 0);
+    assert!(
+        bytes == x"0020b1d110960100000d53616e204672616e636973636f0d00000000000000",
+        0,
+    );
 }
